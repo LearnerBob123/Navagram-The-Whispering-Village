@@ -29,11 +29,11 @@ export function PinpadModal({ showPinpad, setShowPinpad, setGameOver, setLogs }:
             </p>
             
             <div className="grid grid-cols-2 gap-4">
-              {["12345", "34251", "54321", "13524"].map((pin, i) => (
+              {["4217", "1742", "7124", "2471"].map((pin, i) => (
                 <button
                   key={i}
                   onClick={() => {
-                    if (pin === "34251") {
+                    if (pin === "4217" || pin === "1742") {
                       setShowPinpad(false);
                       setGameOver("win");
                     } else {

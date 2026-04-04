@@ -26,8 +26,8 @@ export class SimulationEngine {
   }
 
   private initializeAgents() {
-    const names = ["Aarti", "Babu", "Chacha", "Deepa", "Eshaan"];
-    const colors = ["#ef4444", "#3b82f6", "#10b981", "#f59e0b", "#8b5cf6"];
+    const names = ["Aarti", "Babu"];
+    const colors = ["#ef4444", "#3b82f6"];
     
     const cafe = LOCATIONS.find(l => l.id === 'cafe');
     const cafeX = cafe ? cafe.x : 1;
@@ -43,7 +43,7 @@ export class SimulationEngine {
 
     const bgNames = ["Raju", "Sita", "Gita", "Ramesh", "Suresh", "Kamla", "Vikas", "Pooja", "Amit", "Neha"];
     const bgAgents = bgNames.map((name, i) => {
-      const agent = new Agent(i + 5, name, "#9ca3af"); // Gray color
+      const agent = new Agent(i + 2, name, "#9ca3af"); // Gray color
       agent.isBackground = true;
       return agent;
     });
@@ -60,9 +60,6 @@ export class SimulationEngine {
     // Assign specific rumors to specific agents for Day 1
     this.agents[0].knownRumors.push("drone-banyan");
     this.agents[1].knownRumors.push("pump-north");
-    this.agents[2].knownRumors.push("flyers-hall");
-    this.agents[3].knownRumors.push("wifi-library");
-    this.agents[4].knownRumors.push("tracks-warehouse");
 
     // Set lineage origin
     this.agents.forEach(a => {
@@ -136,7 +133,7 @@ export class SimulationEngine {
     if (!rumor) return { success: false, message: "Rumor not found.", repChange: 0 };
 
     if (this.verifiedRumors[rumorId] === undefined) {
-      return { success: false, message: "Verify this at the Cybercafe first!", repChange: 0 };
+      return { success: false, message: "Verify this at its location first!", repChange: 0 };
     }
 
     const isTrue = this.verifiedRumors[rumorId];

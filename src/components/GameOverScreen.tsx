@@ -36,12 +36,12 @@ export function GameOverScreen({ gameOver, playerName, playerReputation, verifie
             <span className="text-xl font-black italic uppercase">{playerName}</span>
           </div>
           <div className="flex justify-between items-center text-white">
-            <span className="text-sm font-bold uppercase opacity-60">Reputation</span>
+            <span className="text-sm font-bold uppercase opacity-60">Skillful</span>
             <span className="text-xl font-black italic uppercase">{playerReputation}</span>
           </div>
           <div className="flex justify-between items-center text-white">
             <span className="text-sm font-bold uppercase opacity-60">Truths Uncovered</span>
-            <span className="text-xl font-black italic uppercase">{verifiedRumorsCount} / 5</span>
+            <span className="text-xl font-black italic uppercase">{verifiedRumorsCount} / 2</span>
           </div>
           <div className="flex justify-between items-center text-white">
             <span className="text-sm font-bold uppercase opacity-60">Brainwashed Meter</span>

@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 export interface Position {
   x: number;
   y: number;
@@ -10,7 +5,7 @@ export interface Position {
 }
 
 export interface ChatMessage {
-  sender: 'npc' | 'player';
+  sender: 'player' | 'npc';
   text: string;
 }
 
@@ -19,8 +14,6 @@ export interface ChatOption {
   onClick: () => void;
 }
 
-export type RumorCategory = "village" | "world" | "conspiracy";
-
 export interface Rumor {
   id: string;
   text: string;
@@ -28,7 +21,7 @@ export interface Rumor {
   credibility: number;
   verificationLocation?: Position;
   tags: string[];
-  category: RumorCategory;
+  category: string;
 }
 
 export interface Location {

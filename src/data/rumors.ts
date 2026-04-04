@@ -12,11 +12,11 @@ export const RUMORS: Rumor[] = [
   },
   {
     id: "pump-north",
-    text: "The water pump at the North Fields turned on by itself at midnight. I went to check and saw someone in a dark hoodie running towards the Cybercafe.",
+    text: "The water pump at the North Fields turned on by itself at midnight. I went to check and saw someone in a dark hoodie running towards Chai Nashta Point.",
     isTrue: true,
     credibility: 0.8,
     verificationLocation: { x: 26, y: 6, name: "North Fields" },
-    tags: ["north", "fields", "pump", "hoodie", "cybercafe"],
+    tags: ["north", "fields", "pump", "hoodie", "chai", "nashta"],
     category: "village"
   },
   {

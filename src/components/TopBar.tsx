@@ -44,7 +44,7 @@ export function TopBar({ day, getTimeOfDay, brainwashedMeter, playerPos, playerR
       
       <div className="flex flex-wrap justify-end gap-4 text-xs font-bold text-zinc-400">
         <div className="flex items-center gap-1"><User size={14} /> POS: {playerPos.x},{playerPos.y}</div>
-        <div className="flex items-center gap-1"><Heart size={14} className="text-red-500" /> REP: {playerReputation}</div>
+        <div className="flex items-center gap-1"><Heart size={14} className="text-red-500" /> SKILLFUL: {playerReputation}</div>
       </div>
     </div>
   );
