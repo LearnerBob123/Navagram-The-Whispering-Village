@@ -83,30 +83,25 @@ export default async function handler(req: any, res: any) {
         const ai = new GoogleGenAI({ apiKey });
 
         const response = await ai.models.generateContent({
-            model: 'gemini-1.5-flash', // safer model name
+            model: 'gemini-2.5-flash', // safer model name
             contents: prompt,
-            config: {
-                temperature: 1,
-                systemInstruction: `You are Byte Baba, the Edge Oracle of Navagram. 
-Speak warmly, playfully, and in character. 
-Give actionable guidance based on game state. 
-Avoid sounding like an AI assistant.`,
-            },
+//             config: {
+//                 temperature: 1,
+//                 systemInstruction: `You are Byte Baba, the Edge Oracle of Navagram. 
+// Speak warmly, playfully, and in character. 
+// Give actionable guidance based on game state. 
+// Avoid sounding like an AI assistant.`,
+//             },
         });
-
+        console.log("✅ SUCCESS:");
+        console.log(response.text);
         const text = response.text?.trim();
 
         if (!text) {
             return res.status(502).json({ error: 'Empty response from Gemini' });
         }
 
-        return res.status(200).json({
-            text,
-            voiceAvailable: Boolean(
-                process.env.ELEVENLABS_API_KEY &&
-                process.env.ELEVENLABS_VOICE_ID
-            ),
-        });
+        return res.status(200).json({ text });
     } catch (error: any) {
         return res.status(500).json({
             error: error?.message || 'Internal server error',

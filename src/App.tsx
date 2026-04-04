@@ -24,46 +24,6 @@ import { AgentPhone } from './components/AgentPhone';
 import { DayTransition } from './components/DayTransition';
 import { PinpadModal } from './components/PinpadModal';
 import { DialogueModal } from './components/DialogueModal';
-import { Day3PopupModal } from './components/Day3PopupModal';
-import { CluePopupModal } from './components/CluePopupModal';
-import { NoCluePopupModal } from './components/NoCluePopupModal';
-import { LocationsHint } from './components/LocationsHint';
-
-import { WireTask } from './components/minigames/WireTask';
-import { PumpTask } from './components/minigames/PumpTask';
-
-// ── Module-level BGM singleton ──────────────────────────────────────────
-// Lives outside React so it persists across all screens and survives re-renders.
-const BGM_VOLUME = 0.4;
-const BGM_DUCKED_VOLUME = 0.08;
-let bgmInstance: HTMLAudioElement | null = null;
-
-function getBgm(): HTMLAudioElement {
-  if (!bgmInstance) {
-    bgmInstance = new Audio('/panchayat-bgm.mp3');
-    bgmInstance.loop = true;
-    bgmInstance.volume = BGM_VOLUME;
-  }
-  return bgmInstance;
-}
-
-function smoothVolume(audio: HTMLAudioElement, from: number, to: number, durationMs: number) {
-  const steps = 20;
-  const stepMs = durationMs / steps;
-  const delta = (to - from) / steps;
-  let current = from;
-  let step = 0;
-  const id = setInterval(() => {
-    step++;
-    current += delta;
-    audio.volume = Math.max(0, Math.min(1, current));
-    if (step >= steps) {
-      audio.volume = Math.max(0, Math.min(1, to));
-      clearInterval(id);
-    }
-  }, stepMs);
-}
-// ────────────────────────────────────────────────────────────────────────
 
 export default function App() {
   const oracleQuickActions = [
@@ -118,10 +78,6 @@ export default function App() {
   const [dialogueView, setDialogueView] = useState<"main" | "share" | "fact-check" | "chat" | "pinpad">("main");
   const [showPinpad, setShowPinpad] = useState(false);
   const [showPhone, setShowPhone] = useState(false);
-  const [showDay3Popup, setShowDay3Popup] = useState(false);
-  const [showCluePopup, setShowCluePopup] = useState<string | null>(null);
-  const [showNoCluePopup, setShowNoCluePopup] = useState(false);
-  const [searchedLocations, setSearchedLocations] = useState<string[]>([]);
   
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatOptions, setChatOptions] = useState<ChatOption[]>([]);
@@ -135,7 +91,6 @@ export default function App() {
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
   const currentAudioUrlRef = useRef<string | null>(null);
   const pressedKeysRef = useRef<Set<string>>(new Set());
-  const bgmRef = useRef<HTMLAudioElement>(getBgm());
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -162,72 +117,6 @@ export default function App() {
     window.addEventListener('blur', clearKeys);
     return () => window.removeEventListener('blur', clearKeys);
   }, []);
-
-  // Background Music — uses module-level singleton, loops across all screens
-  useEffect(() => {
-    const bgm = bgmRef.current;
-
-    const tryPlay = () => {
-      if (bgm.paused) {
-        bgm.play().catch(err => console.log('BGM autoplay prevented:', err));
-      }
-    };
-
-    // Try immediately (may be blocked)
-    tryPlay();
-
-    // Also try on first user interaction
-    const handleInteraction = () => tryPlay();
-    document.addEventListener('click', handleInteraction, { once: true });
-    document.addEventListener('keydown', handleInteraction, { once: true });
-
-    return () => {
-      document.removeEventListener('click', handleInteraction);
-      document.removeEventListener('keydown', handleInteraction);
-      // Do NOT pause/destroy — the BGM must keep playing across screens
-    };
-  }, []);
-
-  const playedAnnouncementsRef = useRef<Set<number>>(new Set());
-
-  // Day Announcements with smooth BGM ducking
-  useEffect(() => {
-    if (!gameStarted) return;
-
-    let shouldPlayDay = 0;
-
-    if (day === 1 && !playedAnnouncementsRef.current.has(1)) {
-      shouldPlayDay = 1;
-    } else if (showDayTransition && day === 2 && !playedAnnouncementsRef.current.has(2)) {
-      shouldPlayDay = 2;
-    } else if (showDayTransition && day === 3 && !playedAnnouncementsRef.current.has(3)) {
-      shouldPlayDay = 3;
-    }
-
-    if (shouldPlayDay > 0) {
-      playedAnnouncementsRef.current.add(shouldPlayDay);
-
-      const bgm = bgmRef.current;
-
-      // Smoothly duck BGM volume down over 300ms
-      smoothVolume(bgm, bgm.volume, BGM_DUCKED_VOLUME, 300);
-
-      // Play announcement at full volume
-      const announcement = new Audio(`/day${shouldPlayDay}-announcement.mp3`);
-      announcement.volume = 1.0;
-
-      announcement.play().catch(err =>
-        console.log(`Day ${shouldPlayDay} announcement autoplay prevented:`, err)
-      );
-
-      announcement.onended = () => {
-        // Smoothly restore BGM volume over 500ms
-        smoothVolume(bgm, bgm.volume, BGM_VOLUME, 500);
-      };
-    }
-  }, [showDayTransition, day, gameStarted]);
-
-  const [logsMinimized, setLogsMinimized] = useState(false);
 
   // Sync with engine
   useEffect(() => {
@@ -273,13 +162,13 @@ export default function App() {
   // Brainwashed Meter Logic
   useEffect(() => {
     if (day === 1) {
-      setBrainwashedMeter((playerKnownRumors.length / 2) * 100);
+      setBrainwashedMeter((playerKnownRumors.length / 5) * 100);
     }
   }, [playerKnownRumors.length, day]);
 
   // Day Progression Logic
   useEffect(() => {
-    if (day === 1 && playerKnownRumors.length >= 2) {
+    if (day === 1 && playerKnownRumors.length >= 5) {
       setShowDayTransition(true);
       setTimeout(() => {
         setDay(2);
@@ -293,7 +182,7 @@ export default function App() {
           setShowDayTransition(false);
         }, 2000);
       }, 2000);
-    } else if (day === 2 && Object.keys(verifiedRumors).length === 2) {
+    } else if (day === 2 && Object.keys(verifiedRumors).length === 5) {
       setShowDayTransition(true);
       setTimeout(() => {
         setDay(3);
@@ -305,7 +194,6 @@ export default function App() {
         ]);
         setTimeout(() => {
           setShowDayTransition(false);
-          setShowDay3Popup(true);
         }, 2000);
       }, 2000);
     }
@@ -358,11 +246,11 @@ export default function App() {
 
   const currentObjective = (() => {
     if (day === 1) {
-      return `Collect all 2 rumors by talking to villagers. You currently know ${playerKnownRumors.length} of 2.`;
+      return `Collect all 5 rumors by talking to villagers. You currently know ${playerKnownRumors.length} of 5.`;
     }
 
     if (day === 2) {
-      return `Visit marked locations and verify all rumors. You have verified ${Object.keys(verifiedRumors).length} of 2 rumors.`;
+      return `Visit marked locations and verify all rumors. You have verified ${Object.keys(verifiedRumors).length} of 5 rumors.`;
     }
 
     return `Use the clue digits you found and unlock the Abandoned Warehouse. You currently have ${collectedClues.length} clue digits.`;
@@ -378,7 +266,8 @@ export default function App() {
 
     try {
       const historyForRequest = [...chatMessagesRef.current, { sender: 'player', text: trimmed }];
-      const response = await fetch('/api/chatbot', {
+      console.log('Client: Sending chatbot request with message:', trimmed);
+      const response = await fetch('/api/gemini', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -403,6 +292,7 @@ export default function App() {
       });
 
       const data = await response.json();
+      console.log('Client: Received chatbot response:', { text: data?.text?.slice(0, 100), speechEnabled: data?.speechEnabled, hasSpeech: Boolean(data?.speech?.audioBase64) });
       if (!response.ok) {
         throw new Error(typeof data?.error === 'string' ? data.error : 'Chatbot request failed.');
       }
@@ -414,10 +304,12 @@ export default function App() {
       setLogs(prev => [`Byte Baba replied: ${reply}`, ...prev].slice(0, 500));
 
       if (speechEnabled && data?.speech?.audioBase64 && data?.speech?.audioMimeType) {
+        console.log('Client: Received speech data, base64 length:', data.speech.audioBase64.length);
         const binary = atob(data.speech.audioBase64);
         const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
         const blob = new Blob([bytes], { type: data.speech.audioMimeType });
         const audioUrl = URL.createObjectURL(blob);
+        console.log('Client: Created audio blob and URL');
 
         currentAudioRef.current?.pause();
         if (currentAudioUrlRef.current) {
@@ -439,9 +331,13 @@ export default function App() {
           { once: true },
         );
 
-        void audio.play().catch(() => {
+        void audio.play().catch((playError) => {
+          console.error('Client: Audio play failed:', playError);
           setLogs(prev => ['Byte Baba has a voice ready, but the browser blocked autoplay. Ask again after interacting once.', ...prev].slice(0, 500));
         });
+        console.log('Client: Attempted to play audio');
+      } else {
+        console.log('Client: Speech not enabled or no speech data received. SpeechEnabled:', speechEnabled, 'HasSpeech:', Boolean(data?.speech?.audioBase64));
       }
     } catch (error) {
       const messageText = error instanceof Error ? error.message : 'Chatbot request failed.';
@@ -533,42 +429,6 @@ export default function App() {
     void sendOracleMessage(message);
   }, [chatInput, chatbotLoading, isOracle, sendOracleMessage]);
 
-  const [activeMinigame, setActiveMinigame] = useState<{ locId: string, rumorId: string } | null>(null);
-
-  const isSearchableLocation = useCallback((locId: string) => {
-    if (day !== 2) return false;
-    if (locId === 'warehouse') return false;
-    return !searchedLocations.includes(locId);
-  }, [day, searchedLocations]);
-
-  const completeMinigame = useCallback(() => {
-    if (!activeMinigame) return;
-    const { locId, rumorId } = activeMinigame;
-    const loc = LOCATIONS.find(l => l.id === locId);
-    if (!loc) return;
-
-    const result = engine.investigate(rumorId);
-    setVerifiedRumors({ ...engine.verifiedRumors });
-    setSearchedLocations(prev => [...prev, locId]);
-    
-    if (loc.clue && !collectedClues.includes(loc.clue)) {
-      setCollectedClues(prev => [...prev, loc.clue!]);
-      setLogs(prev => [`You found a hidden number clue at ${loc.name}: [${loc.clue}]`, result.message, ...prev].slice(0, 500));
-      
-      setShowCluePopup(loc.clue);
-      setTimeout(() => {
-        setShowCluePopup(null);
-      }, 2000);
-    } else {
-      setLogs(prev => [result.message, ...prev].slice(0, 500));
-    }
-    
-    setPlayerReputation(prev => Math.min(100, prev + 50));
-    setBrainwashedMeter(prev => Math.max(0, prev - 50));
-    setTick(t => t + 1);
-    setActiveMinigame(null);
-  }, [activeMinigame, collectedClues, engine]);
-
   const verifyAtLocation = (locId: string) => {
     const loc = LOCATIONS.find(l => l.id === locId);
     if (!loc) return;
@@ -586,28 +446,30 @@ export default function App() {
       return;
     }
 
-    if (day === 2) {
-      if (searchedLocations.includes(locId)) {
-        setLogs(prev => [`You already searched ${loc.name}. Nothing else here.`, ...prev].slice(0, 500));
-        return;
-      }
+    const unverifiedRumorsAtLoc = RUMORS.filter(r => {
+      const rumorLoc = engine.rumorLocations[r.id];
+      return rumorLoc && rumorLoc.name === loc.name && verifiedRumors[r.id] === undefined;
+    });
 
-      if (locId === 'banyan_tree' || locId === 'north_fields') {
-        const unverifiedRumorsAtLoc = RUMORS.filter(r => {
-          const rumorLoc = engine.rumorLocations[r.id];
-          return rumorLoc && rumorLoc.name === loc.name && verifiedRumors[r.id] === undefined;
-        });
-
-        if (unverifiedRumorsAtLoc.length > 0) {
-          setActiveMinigame({ locId, rumorId: unverifiedRumorsAtLoc[0].id });
+    if (unverifiedRumorsAtLoc.length > 0) {
+      unverifiedRumorsAtLoc.forEach(rumor => {
+        const result = engine.investigate(rumor.id);
+        setVerifiedRumors({ ...engine.verifiedRumors });
+        
+        // Add clue
+        if (loc.clue && !collectedClues.includes(loc.clue)) {
+          setCollectedClues(prev => [...prev, loc.clue!]);
+          setLogs(prev => [`You found a hidden number clue: [${loc.clue}]`, result.message, ...prev].slice(0, 500));
+        } else {
+          setLogs(prev => [result.message, ...prev].slice(0, 500));
         }
-      } else {
-        setSearchedLocations(prev => [...prev, locId]);
-        setTimeLeft(prev => Math.max(0, prev - 15)); // Consume 15 seconds
-        setLogs(prev => [`You searched ${loc.name} thoroughly but found no clues. Time is ticking!`, ...prev].slice(0, 500));
-        setShowNoCluePopup(true);
-        setTimeout(() => setShowNoCluePopup(false), 2000);
-      }
+        
+        setPlayerReputation(prev => Math.min(100, prev + 5));
+        setBrainwashedMeter(prev => Math.max(0, prev - 20));
+      });
+      setTick(t => t + 1);
+    } else {
+      setLogs(prev => [`Nothing new to verify at ${loc.name}.`, ...prev].slice(0, 500));
     }
   };
 
@@ -617,8 +479,14 @@ export default function App() {
     return x >= cafe.x && x < cafe.x + cafe.w && y >= cafe.y && y < cafe.y + cafe.h;
   };
 
+  const hasUnverifiedRumor = (locName: string) =>
+    RUMORS.some(r => {
+      const loc = engine.rumorLocations[r.id];
+      return loc && loc.name === locName && verifiedRumors[r.id] === undefined;
+    });
+
   const movePlayerStep = useCallback(() => {
-    if (activeDialogue || gameOver || showPhone || showPinpad || activeMinigame || showDay3Popup) return;
+    if (activeDialogue || gameOver || showPhone || showPinpad) return;
 
     const pressed = pressedKeysRef.current;
     if (pressed.size === 0) return;
@@ -639,7 +507,7 @@ export default function App() {
   }, [activeDialogue, gameOver, showPhone, showPinpad]);
 
   const tryInteract = useCallback(() => {
-    if (gameOver || showPhone || showPinpad || activeMinigame || showDay3Popup) return;
+    if (gameOver || showPhone || showPinpad) return;
 
     if (activeDialogue) {
       if (dialogueView === 'main') {
@@ -663,7 +531,7 @@ export default function App() {
 
       if (!isInside) return false;
       if (day === 3 && loc.id === 'warehouse') return true;
-      return isSearchableLocation(loc.id);
+      return day === 2 && hasUnverifiedRumor(loc.name);
     });
 
     if (interactableLocation) {
@@ -672,12 +540,12 @@ export default function App() {
     }
 
     setLogs(prev => ['Nothing nearby to interact with right now.', ...prev].slice(0, 500));
-  }, [activeDialogue, agents, day, dialogueView, gameOver, playerPos, showPhone, showPinpad, verifiedRumors, isSearchableLocation, activeMinigame, showDay3Popup]);
+  }, [activeDialogue, agents, day, dialogueView, gameOver, playerPos, showPhone, showPinpad, verifiedRumors]);
 
   useEffect(() => {
     const interval = window.setInterval(() => {
       movePlayerStep();
-    }, 100);
+    }, 110);
 
     return () => window.clearInterval(interval);
   }, [movePlayerStep]);
@@ -700,7 +568,7 @@ export default function App() {
     if (e.key === 'p' || e.key === 'P') {
       e.preventDefault();
       if (e.repeat) return;
-      if (!activeDialogue && !showPinpad && !activeMinigame && !showDay3Popup) {
+      if (!activeDialogue && !showPinpad) {
         setShowPhone(prev => !prev);
       }
       return;
@@ -784,7 +652,7 @@ export default function App() {
             verifiedRumors={verifiedRumors} 
             engine={engine} 
             day={day} 
-            isSearchableLocation={isSearchableLocation} 
+            hasUnverifiedRumor={hasUnverifiedRumor} 
             verifyAtLocation={verifyAtLocation} 
             handleAgentClick={handleAgentClick} 
             playerName={playerName} 
@@ -803,8 +671,6 @@ export default function App() {
           </div>
         </div>
 
-        <LocationsHint />
-
         <div className="absolute bottom-4 left-4 z-30 flex gap-3">
           <button
             onClick={() => setShowPhone(true)}
@@ -821,33 +687,28 @@ export default function App() {
           </button>
         </div>
 
-        <div className={cn("absolute bottom-4 right-4 z-30 w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-zinc-700/70 bg-zinc-950/88 shadow-2xl backdrop-blur-md transition-all duration-300", logsMinimized ? "h-12" : "max-h-72")}>
-          <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3 cursor-pointer" onClick={() => setLogsMinimized(!logsMinimized)}>
+        <div className="absolute bottom-4 right-4 z-30 w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-zinc-700/70 bg-zinc-950/88 shadow-2xl backdrop-blur-md">
+          <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
             <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-zinc-300">
               <ScrollText size={14} className="text-emerald-400" />
               Field Logs
             </div>
-            <div className="flex items-center gap-3">
-              <div className="text-zinc-500 text-xs">{logsMinimized ? 'Show' : 'Hide'}</div>
-              <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
-            </div>
+            <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
           </div>
-          {!logsMinimized && (
-            <div className="max-h-56 overflow-y-auto p-3 space-y-2 custom-scrollbar">
-              {logs.slice(0, 10).map((log, i) => (
-                <div key={i} className={cn(
-                  "rounded-xl border-l-4 px-3 py-2 text-[10px] shadow-sm",
-                  log.startsWith("You ") || log.includes("You investigated") || log.includes("You shared") || log.includes("You decided") || log.includes("You are now friends") || log.includes("You need to verify") || log.includes("🕵️") || log.includes("🔍") ? "border-emerald-500 bg-emerald-500/10 text-emerald-100" :
-                  log.includes("shared") ? "border-blue-500 bg-blue-500/10 text-blue-100" :
-                  log.includes("verified") ? "border-emerald-500 bg-emerald-500/10 text-emerald-100" :
-                  log.includes("📢") ? "border-purple-500 bg-purple-500/10 text-purple-100" :
-                  "border-zinc-600 bg-zinc-900/90 text-zinc-300"
-                )}>
-                  {log}
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="max-h-56 overflow-y-auto p-3 space-y-2 custom-scrollbar">
+            {logs.slice(0, 10).map((log, i) => (
+              <div key={i} className={cn(
+                "rounded-xl border-l-4 px-3 py-2 text-[10px] shadow-sm",
+                log.startsWith("You ") || log.includes("You investigated") || log.includes("You shared") || log.includes("You decided") || log.includes("You are now friends") || log.includes("You need to verify") || log.includes("🕵️") || log.includes("🔍") ? "border-emerald-500 bg-emerald-500/10 text-emerald-100" :
+                log.includes("shared") ? "border-blue-500 bg-blue-500/10 text-blue-100" :
+                log.includes("verified") ? "border-emerald-500 bg-emerald-500/10 text-emerald-100" :
+                log.includes("📢") ? "border-purple-500 bg-purple-500/10 text-purple-100" :
+                "border-zinc-600 bg-zinc-900/90 text-zinc-300"
+              )}>
+                {log}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -888,17 +749,6 @@ export default function App() {
         setSpeechEnabled={setSpeechEnabled}
         voiceAvailable={voiceAvailable}
       />
-
-      {activeMinigame?.locId === 'banyan_tree' && (
-        <WireTask onComplete={completeMinigame} onClose={() => setActiveMinigame(null)} />
-      )}
-      {activeMinigame?.locId === 'north_fields' && (
-        <PumpTask onComplete={completeMinigame} onClose={() => setActiveMinigame(null)} />
-      )}
-
-      <Day3PopupModal show={showDay3Popup} onClose={() => setShowDay3Popup(false)} />
-      <CluePopupModal clue={showCluePopup} />
-      <NoCluePopupModal show={showNoCluePopup} />
 
       <style dangerouslySetInnerHTML={{ __html: `
         .custom-scrollbar::-webkit-scrollbar { width: 8px; }
