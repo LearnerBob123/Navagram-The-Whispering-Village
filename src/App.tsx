@@ -378,7 +378,7 @@ export default function App() {
 
     try {
       const historyForRequest = [...chatMessagesRef.current, { sender: 'player', text: trimmed }];
-      const response = await fetch('/api/chatbot', {
+      const response = await fetch('/api/gemini', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
