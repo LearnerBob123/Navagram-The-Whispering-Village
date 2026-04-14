@@ -109,7 +109,7 @@ export function StartScreen({ tempName, setTempName, handleStartGame }: StartScr
           <ul className="text-sm text-zinc-300 space-y-4">
             <li className="flex gap-3 items-start">
               <span className="bg-emerald-900/50 text-emerald-400 px-2 py-1 rounded font-black text-xs mt-0.5">DAY 1</span> 
-              <span className="leading-relaxed">Talk to villagers at the Chai Nashta Point to collect all 5 rumors. Watch the Brainwashed Meter rise!</span>
+              <span className="leading-relaxed">Talk to villagers at the Chai Nashta Point to collect all 2 rumors. Watch the Brainwashed Meter rise!</span>
             </li>
             <li className="flex gap-3 items-start">
               <span className="bg-emerald-900/50 text-emerald-400 px-2 py-1 rounded font-black text-xs mt-0.5">DAY 2</span> 
